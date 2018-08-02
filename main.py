@@ -1,6 +1,7 @@
-from tailrecursion import tailrec
 import threading
-import time
+import multiprocessing
+import sys
+from tailrecursion import tailrec
 from timer import timer
 
 
@@ -9,7 +10,6 @@ def fact(n):
     @tailrec
     def tail_fact(n, acc=1):
         if n == 0:
-            print('over')
             return acc
         else:
             return tail_fact(n-1, acc*n)
@@ -17,10 +17,41 @@ def fact(n):
     return tail_fact(n)
 
 
+@timer
+def seq_fun(callback, amount):
+    while amount > 0:
+        callback()
+        amount -= 1
+
+
+@timer
+def thread_fun(callback, amount):
+    threads = []
+    while amount > 0:
+        threads.append(threading.Thread(target=callback))
+        amount -= 1
+    for i in threads:
+        i.start()
+    for i in threads:
+        i.join()
+
+
+@timer
+def proc_fun(callback, amount):
+    processes = []
+    while amount > 0:
+        processes.append(multiprocessing.Process(target=callback))
+        amount -= 1
+    for i in processes:
+        i.start()
+    for i in processes:
+        i.join()
+
+
 if __name__ == '__main__':
-    N = 80000
-    N1 = 10
-    t = threading.Thread(target=lambda: fact(N), daemon=True)
-    t.start()
-    fact(N1)
-    t.join()
+    print(sys.version)
+    N = 60000
+    CPU_CORES_AMOUNT = multiprocessing.cpu_count() + 1
+    seq_fun(lambda: fact(N), CPU_CORES_AMOUNT)
+    thread_fun(lambda: fact(N), CPU_CORES_AMOUNT)
+    proc_fun(lambda: fact(N), CPU_CORES_AMOUNT)
